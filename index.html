@@ -6,200 +6,181 @@
 <title>응급실 배정 최적화 시스템</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --red: #ff0000;
-    --red-light: #fff0f0;
-    --red-dark: #cc0000;
-    --bg: #f7f7f7;
-    --surface: #ffffff;
-    --surface2: #f0f0f0;
-    --border: #e0e0e0;
-    --text: #1a1a1a;
-    --text-muted: #666666;
-    --text-hint: #999999;
-    --green: #16a34a;
-    --amber: #d97706;
-    --radius: 10px;
-    --shadow-md: 0 2px 12px rgba(0,0,0,0.1);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+:root {
+  --red:#ff0000; --red-light:#fff0f0; --red-dark:#cc0000;
+  --bg:#f7f7f7; --surface:#fff; --surface2:#f0f0f0;
+  --border:#e0e0e0; --text:#1a1a1a; --text-muted:#666; --text-hint:#999;
+  --green:#16a34a; --amber:#d97706; --blue:#1d4ed8;
+  --radius:10px; --shadow:0 2px 12px rgba(0,0,0,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;overflow:hidden;}
 
-  header {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 0 24px; height: 56px;
-    display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 100;
-  }
-  .header-left { display: flex; align-items: center; gap: 12px; }
-  .logo-mark { width: 32px; height: 32px; background: var(--red); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-  .logo-mark svg { width: 18px; height: 18px; fill: #fff; }
-  .header-title { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
-  .header-title span { color: var(--red); }
-  .header-right { display: flex; align-items: center; gap: 16px; }
-  .status-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
-  .time-display { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-muted); }
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.logo-wrap{display:flex;align-items:center;gap:12px;}
+.logo-mark{width:32px;height:32px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:18px;height:18px;fill:#fff;}
+.header-title{font-size:15px;font-weight:700;letter-spacing:-.3px;}
+.header-title span{color:var(--red);}
+.hdr-right{display:flex;align-items:center;gap:16px;}
+.live-dot{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#clock{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-muted);}
 
-  .main-layout { display: grid; grid-template-columns: 380px 1fr; height: calc(100vh - 56px); }
-  .left-panel { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-  .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+.layout{display:grid;grid-template-columns:390px 1fr;height:calc(100vh - 56px);}
+.left{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.right{display:flex;flex-direction:column;overflow:hidden;}
 
-  .section-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--text-hint); text-transform: uppercase; padding: 14px 20px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.panel-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-hint);padding:12px 20px 8px;border-bottom:1px solid var(--border);flex-shrink:0;}
 
-  .patient-form { flex: 1; overflow-y: auto; padding: 16px 20px; }
-  .form-group { margin-bottom: 15px; }
-  .form-label { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; display: block; }
-  .form-label .hint { color: var(--text-hint); font-weight: 400; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-scroll{flex:1;overflow-y:auto;padding:14px 20px;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:5px;display:block;}
+.hint{font-weight:400;color:var(--text-hint);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+input[type=text],input[type=number],select,textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-family:'Noto Sans KR',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s;appearance:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,0,0,.07);}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer;}
+textarea{resize:none;height:64px;line-height:1.5;}
 
-  input[type="text"], input[type="number"], select, textarea {
-    width: 100%; border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 9px 12px; font-family: 'Noto Sans KR', sans-serif;
-    font-size: 13px; color: var(--text); background: var(--surface);
-    outline: none; transition: border-color .15s; appearance: none;
-  }
-  input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
-    border-color: var(--red); box-shadow: 0 0 0 3px rgba(255,0,0,.07);
-  }
-  select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 10px center;
-    padding-right: 28px; cursor: pointer;
-  }
-  textarea { resize: none; height: 68px; line-height: 1.5; }
+.symptom-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.tag{border:1px solid var(--border);background:var(--surface);border-radius:20px;padding:3px 10px;font-size:12px;cursor:pointer;transition:all .15s;user-select:none;}
+.tag:hover{border-color:var(--red);color:var(--red);}
+.tag.active{background:var(--red-light);border-color:var(--red);color:var(--red);font-weight:500;}
 
-  .symptom-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tag { border: 1px solid var(--border); background: var(--surface); border-radius: 20px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all .15s; user-select: none; }
-  .tag:hover { border-color: var(--red); color: var(--red); }
-  .tag.active { background: var(--red-light); border-color: var(--red); color: var(--red); font-weight: 500; }
+/* CHATBOT */
+.chat-section{border-top:1px solid var(--border);display:flex;flex-direction:column;height:270px;flex-shrink:0;}
+.chat-header{padding:9px 16px 7px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.chat-header-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-hint);}
+.badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.05em;}
+.badge-gemini{background:#f0fdf4;color:#15803d;border:1px solid #86efac;}
+.badge-live{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
 
-  /* Chatbot - RAG 대기 상태 */
-  .chat-section { border-top: 1px solid var(--border); display: flex; flex-direction: column; max-height: 240px; flex-shrink: 0; }
-  .chat-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--text-hint); text-transform: uppercase; padding: 10px 20px 8px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
-  .ai-badge { background: var(--surface2); color: var(--text-muted); font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: .06em; border: 1px solid var(--border); }
-  .rag-pending { font-size: 10px; color: var(--amber); background: #fffbeb; border: 1px solid #fde68a; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
-  .chat-pending-body {
-    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 16px 20px; gap: 8px; text-align: center;
-  }
-  .pending-icon { width: 36px; height: 36px; border-radius: 50%; background: #fffbeb; border: 1.5px solid #fde68a; display: flex; align-items: center; justify-content: center; }
-  .pending-icon svg { width: 18px; height: 18px; fill: var(--amber); }
-  .pending-title { font-size: 13px; font-weight: 600; color: var(--text-muted); }
-  .pending-desc { font-size: 11.5px; color: var(--text-hint); line-height: 1.6; }
-  .chat-input-row { display: flex; gap: 8px; padding: 8px 14px 12px; border-top: 1px solid var(--border); flex-shrink: 0; }
-  .chat-input { flex: 1; border: 1px solid var(--border); border-radius: 20px; padding: 7px 14px; font-size: 12.5px; font-family: 'Noto Sans KR', sans-serif; outline: none; background: var(--bg); color: var(--text-hint); cursor: not-allowed; }
-  .chat-send { width: 32px; height: 32px; background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; cursor: not-allowed; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center; }
-  .chat-send svg { fill: var(--text-hint); width: 14px; height: 14px; }
+.chat-messages{flex:1;overflow-y:auto;padding:8px 14px;display:flex;flex-direction:column;gap:7px;}
+.msg{max-width:92%;padding:8px 12px;border-radius:12px;font-size:12.5px;line-height:1.55;}
+.msg.bot{background:var(--bg);border:1px solid var(--border);align-self:flex-start;border-radius:4px 12px 12px 12px;color:var(--text-muted);}
+.msg.user{background:var(--red);color:#fff;align-self:flex-end;border-radius:12px 4px 12px 12px;}
+.msg.system{background:#eff6ff;border:1px solid #bfdbfe;align-self:flex-start;border-radius:4px 12px 12px 12px;color:#1e3a8a;font-size:12px;}
+.msg.critical{background:#fef2f2;border:1px solid #fca5a5;align-self:flex-start;border-radius:4px 12px 12px 12px;color:#991b1b;font-weight:600;}
 
-  .form-submit { padding: 12px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
-  .btn-primary { width: 100%; background: var(--red); color: #fff; border: none; border-radius: var(--radius); padding: 11px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s; letter-spacing: -.2px; }
-  .btn-primary:hover { background: var(--red-dark); }
-  .btn-primary:disabled { background: var(--border); color: var(--text-hint); cursor: not-allowed; }
+.typing{display:none;align-self:flex-start;padding:8px 14px;background:var(--bg);border:1px solid var(--border);border-radius:4px 12px 12px 12px;}
+.typing-dots{display:flex;gap:4px;align-items:center;}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--text-hint);animation:bounce .9s infinite;}
+.typing-dots span:nth-child(2){animation-delay:.15s;}
+.typing-dots span:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
 
-  .map-container { flex: 1; position: relative; overflow: hidden; }
-  #map { width: 100%; height: 100%; }
+.chat-input-row{display:flex;gap:8px;padding:8px 12px 10px;border-top:1px solid var(--border);flex-shrink:0;}
+.chat-input{flex:1;border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:12.5px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .15s;}
+.chat-input:focus{border-color:var(--red);}
+.chat-send{width:32px;height:32px;background:var(--red);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:center;transition:background .15s;}
+.chat-send:hover{background:var(--red-dark);}
+.chat-send svg{fill:#fff;width:14px;height:14px;}
 
-  .map-overlay { position: absolute; top: 14px; left: 14px; pointer-events: none; }
-  .map-status-card { background: rgba(255,255,255,.96); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; pointer-events: all; box-shadow: var(--shadow-md); font-size: 12px; min-width: 180px; }
-  .card-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--text-hint); text-transform: uppercase; margin-bottom: 4px; }
-  .loc-text { font-size: 13px; font-weight: 500; color: var(--text); }
-  .loc-sub { font-size: 11px; color: var(--text-hint); font-family: 'IBM Plex Mono', monospace; }
+.form-submit{padding:10px 20px;border-top:1px solid var(--border);flex-shrink:0;}
+.btn-primary{width:100%;background:var(--red);color:#fff;border:none;border-radius:var(--radius);padding:11px;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s;}
+.btn-primary:hover{background:var(--red-dark);}
+.btn-primary:disabled{background:var(--border);color:var(--text-hint);cursor:not-allowed;}
 
-  .api-status-card { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,.96); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 13px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 5px; }
-  .api-row { display: flex; align-items: center; gap: 7px; }
-  .api-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-  .api-dot.live { background: var(--green); }
-  .api-dot.pending { background: var(--amber); }
-  .api-row span { font-size: 11px; font-weight: 500; }
+/* MAP */
+.map-container{flex:1;position:relative;}
+#map{width:100%;height:100%;display:block;}
 
-  .result-panel { background: var(--surface); border-top: 1px solid var(--border); height: 230px; overflow-y: auto; }
-  .result-header { display: flex; align-items: center; justify-content: space-between; padding: 11px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 5; }
-  .result-title { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-hint); }
-  .result-meta { display: flex; gap: 8px; align-items: center; }
-  .data-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; letter-spacing: .04em; display: none; }
-  .tag-live { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
-  .tag-sim { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-  .result-count { font-size: 12px; color: var(--text-muted); }
+.map-card{position:absolute;background:rgba(255,255,255,.97);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;z-index:10;}
+.map-loc{top:14px;left:14px;min-width:170px;}
+.map-apis{top:14px;right:14px;display:flex;flex-direction:column;gap:5px;}
+.api-row{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;}
+.api-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.api-dot.live{background:var(--green);}
+.api-dot.pend{background:var(--amber);}
+.card-title{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-hint);text-transform:uppercase;margin-bottom:3px;}
+.loc-name{font-size:13px;font-weight:500;}
+.loc-coord{font-size:11px;color:var(--text-hint);font-family:'IBM Plex Mono',monospace;}
 
-  .hospital-list { display: grid; grid-template-columns: repeat(3,1fr); }
-  .hospital-card { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 13px 15px; cursor: pointer; transition: background .12s; position: relative; }
-  .hospital-card:hover { background: var(--bg); }
-  .hospital-card:nth-child(3n) { border-right: none; }
-  .rank-badge { position: absolute; top: 11px; right: 13px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
-  .rank-1 { background: var(--red); color: #fff; }
-  .rank-2 { background: #e5e7eb; color: var(--text-muted); }
-  .rank-3 { background: var(--surface2); color: var(--text-hint); }
-  .rank-n { background: transparent; color: var(--text-hint); font-size: 10px; }
-  .hosp-name { font-size: 13px; font-weight: 700; margin-bottom: 5px; padding-right: 28px; }
-  .hosp-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
-  .meta-pill { font-size: 10px; padding: 2px 7px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
-  .meta-pill.ok { border-color: #86efac; background: #f0fdf4; color: #15803d; }
-  .meta-pill.warn { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
-  .meta-pill.crit { border-color: #fca5a5; background: #fef2f2; color: #991b1b; }
-  .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
-  .score-bar-bg { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
-  .score-bar-fill { height: 100%; border-radius: 2px; background: var(--red); transition: width .6s ease; }
-  .score-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: var(--text); min-width: 26px; text-align: right; }
+.critical-banner{display:none;position:absolute;bottom:260px;left:50%;transform:translateX(-50%);background:#dc2626;color:#fff;border-radius:12px;padding:14px 24px;box-shadow:0 4px 20px rgba(220,38,38,.45);z-index:100;text-align:center;min-width:320px;}
+.critical-banner.show{display:block;}
+.critical-title{font-size:15px;font-weight:700;margin-bottom:4px;}
+.critical-sub{font-size:12px;opacity:.9;margin-bottom:12px;}
+.btn-119{background:#fff;color:#dc2626;border:none;border-radius:8px;padding:8px 20px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px;}
+.btn-close{background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Noto Sans KR',sans-serif;font-size:13px;cursor:pointer;}
 
-  .loading-overlay { display: none; position: absolute; inset: 0; background: rgba(247,247,247,.88); align-items: center; justify-content: center; flex-direction: column; gap: 12px; z-index: 50; }
-  .loading-overlay.active { display: flex; }
-  .spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin .8s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .loading-text { font-size: 13px; color: var(--text-muted); font-weight: 500; }
-  .empty-result { padding: 32px; text-align: center; color: var(--text-hint); font-size: 13px; grid-column: 1/-1; }
+.loading-overlay{display:none;position:absolute;inset:0;background:rgba(247,247,247,.88);align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:50;}
+.loading-overlay.active{display:flex;}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--text-muted);font-weight:500;}
 
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* RESULT */
+.result-panel{background:var(--surface);border-top:1px solid var(--border);height:240px;overflow-y:auto;flex-shrink:0;}
+.result-header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:5;}
+.result-title{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-hint);}
+.result-meta{display:flex;gap:8px;align-items:center;}
+.result-count{font-size:12px;color:var(--text-muted);}
+.dtag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;display:none;}
+.dtag-live{background:#f0fdf4;color:#15803d;border:1px solid #86efac;}
+.dtag-sim{background:#fffbeb;color:#92400e;border:1px solid #fde68a;}
+.dtag-crit{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;}
+
+.hospital-list{display:grid;grid-template-columns:repeat(3,1fr);}
+.hcard{border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:13px 15px;cursor:pointer;transition:background .12s;position:relative;}
+.hcard:hover{background:var(--bg);}
+.hcard:nth-child(3n){border-right:none;}
+.hcard.top{border-top:2px solid var(--red);}
+.rank{position:absolute;top:11px;right:13px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+.r1{background:var(--red);color:#fff;}
+.r2{background:#e5e7eb;color:var(--text-muted);}
+.r3{background:var(--surface2);color:var(--text-hint);}
+.rn{background:transparent;color:var(--text-hint);font-size:10px;}
+.hname{font-size:13px;font-weight:700;margin-bottom:5px;padding-right:28px;}
+.hmeta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px;}
+.pill{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--border);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;}
+.pill.ok{border-color:#86efac;background:#f0fdf4;color:#15803d;}
+.pill.warn{border-color:#fcd34d;background:#fffbeb;color:#92400e;}
+.pill.crit{border-color:#fca5a5;background:#fef2f2;color:#991b1b;}
+.pill.dept{border-color:#bfdbfe;background:#eff6ff;color:#1d4ed8;}
+.srow{display:flex;align-items:center;gap:8px;}
+.sbg{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.sfill{height:100%;border-radius:2px;transition:width .6s ease;}
+.sfill.normal{background:var(--red);}
+.sfill.emerg{background:#dc2626;}
+.snum{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;min-width:26px;text-align:right;}
+.empty{padding:32px;text-align:center;color:var(--text-hint);font-size:13px;grid-column:1/-1;}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="header-left">
-    <div class="logo-mark">
-      <svg viewBox="0 0 24 24"><path d="M12 2C8 2 4.5 5.5 4.5 9.5c0 5.25 7.5 12.5 7.5 12.5s7.5-7.25 7.5-12.5C19.5 5.5 16 2 12 2zm0 10a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
-    </div>
+  <div class="logo-wrap">
+    <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 4.5 5.5 4.5 9.5c0 5.25 7.5 12.5 7.5 12.5s7.5-7.25 7.5-12.5C19.5 5.5 16 2 12 2zm0 10a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></div>
     <div class="header-title">응급실 배정 <span>최적화</span> 시스템</div>
   </div>
-  <div class="header-right">
-    <div class="status-dot"><div class="dot"></div><span>실시간 연동 중</span></div>
-    <div class="time-display" id="clock">--:--:--</div>
+  <div class="hdr-right">
+    <div class="live-dot"><div class="dot"></div><span>실시간 연동 중</span></div>
+    <div id="clock">--:--:--</div>
   </div>
 </header>
 
-<div class="main-layout">
-
-  <!-- Left Panel -->
-  <div class="left-panel">
-    <div class="section-label">환자 정보 입력</div>
-
-    <div class="patient-form">
-
-      <!-- 나이 / 성별 -->
+<div class="layout">
+  <!-- LEFT -->
+  <div class="left">
+    <div class="panel-label">환자 정보 입력</div>
+    <div class="form-scroll">
       <div class="form-group">
         <div class="form-row">
-          <div>
-            <label class="form-label">나이</label>
-            <input type="number" id="age" placeholder="예: 52" min="0" max="120">
-          </div>
-          <div>
-            <label class="form-label">성별</label>
-            <select id="gender">
-              <option value="">선택</option>
-              <option value="male">남성</option>
-              <option value="female">여성</option>
-            </select>
+          <div><label class="form-label">나이</label><input type="number" id="age" placeholder="예: 52" min="0" max="120"></div>
+          <div><label class="form-label">성별</label>
+            <select id="gender"><option value="">선택</option><option value="male">남성</option><option value="female">여성</option></select>
           </div>
         </div>
       </div>
-
-      <!-- 주요 증상 -->
       <div class="form-group">
-        <label class="form-label">주요 증상 <span class="hint">(복수 선택 가능)</span></label>
-        <div class="symptom-tags">
+        <label class="form-label">주요 증상 <span class="hint">(복수 선택 · 챗봇 자동 분류)</span></label>
+        <div class="symptom-tags" id="symTags">
           <div class="tag" onclick="toggleTag(this)">흉통</div>
           <div class="tag" onclick="toggleTag(this)">호흡곤란</div>
           <div class="tag" onclick="toggleTag(this)">복통</div>
@@ -208,103 +189,81 @@
           <div class="tag" onclick="toggleTag(this)">외상</div>
           <div class="tag" onclick="toggleTag(this)">뇌졸중</div>
           <div class="tag" onclick="toggleTag(this)">발열</div>
-          <div class="tag" onclick="toggleTag(this)">고혈압</div>
           <div class="tag" onclick="toggleTag(this)">의식저하</div>
           <div class="tag" onclick="toggleTag(this)">좌측 팔 저림</div>
           <div class="tag" onclick="toggleTag(this)">식은땀</div>
           <div class="tag" onclick="toggleTag(this)">구토</div>
           <div class="tag" onclick="toggleTag(this)">골절</div>
+          <div class="tag" onclick="toggleTag(this)">진통</div>
+          <div class="tag" onclick="toggleTag(this)">안과 이상</div>
+          <div class="tag" onclick="toggleTag(this)">소아 증상</div>
         </div>
       </div>
-
-      <!-- 필요 진료과 -->
-      <div class="form-group">
-        <label class="form-label">필요 진료과</label>
-        <select id="dept">
-          <option value="">선택 (선택사항)</option>
-          <option value="cardiac">심혈관·흉부외과</option>
-          <option value="neuro">신경과·신경외과</option>
-          <option value="trauma">외상외과·정형외과</option>
-          <option value="internal">내과</option>
-          <option value="peds">소아과</option>
-          <option value="ob">산부인과</option>
-          <option value="ent">이비인후과</option>
-          <option value="uro">비뇨기과</option>
-        </select>
-      </div>
-
-      <!-- 기존 병력 -->
       <div class="form-group">
         <label class="form-label">기존 병력</label>
         <textarea id="medHistory" placeholder="예: 고혈압, 당뇨, 부정맥 등"></textarea>
       </div>
-
-      <!-- 기존 다니던 병원 -->
       <div class="form-group">
         <label class="form-label">기존 다니던 병원 <span class="hint">(선택사항)</span></label>
         <input type="text" id="prevHosp" placeholder="예: 세브란스병원 심혈관센터">
       </div>
-
     </div>
 
-    <!-- RAG 챗봇 - API 연동 대기 상태 -->
+    <!-- CHATBOT -->
     <div class="chat-section">
-      <div class="chat-label">
-        증상 AI 어시스턴트
-        <span class="ai-badge">RAG</span>
-        <span class="rag-pending">API 연동 준비 중</span>
+      <div class="chat-header">
+        <span class="chat-header-title">증상 AI 분류</span>
+        <span class="badge badge-gemini">Gemini</span>
+        <span class="badge badge-live">실시간 분석</span>
       </div>
-      <div class="chat-pending-body">
-        <div class="pending-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 2a8 8 0 100 16A8 8 0 0012 4zm0 3a1 1 0 011 1v4a1 1 0 01-2 0V8a1 1 0 011-1zm0 8a1.25 1.25 0 110 2.5A1.25 1.25 0 0112 15z"/></svg>
-        </div>
-        <div class="pending-title">RAG API 연동 대기 중</div>
-        <div class="pending-desc">API 키 발급 후 연동하면 자연어 증상 입력 시<br>자동으로 진료과 및 태그를 분류합니다.</div>
+      <div class="chat-messages" id="chatMsg">
+        <div class="msg bot">안녕하세요! 증상을 자유롭게 말씀해 주세요.<br>
+        Gemini AI가 <strong>KTAS 중증도, 필요 진료과, 특수과 응급실</strong>을 자동 분류합니다.<br>
+        <em style="color:var(--text-hint);font-size:11.5px;">예: "갑자기 가슴이 쥐어짜고 왼팔이 저려요"</em></div>
+      </div>
+      <div class="typing" id="typing">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
       </div>
       <div class="chat-input-row">
-        <input class="chat-input" type="text" placeholder="RAG API 연동 후 활성화됩니다" disabled>
-        <button class="chat-send" disabled>
+        <input class="chat-input" id="chatIn" type="text" placeholder="증상을 입력하세요...">
+        <button class="chat-send" onclick="sendChat()">
           <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
         </button>
       </div>
     </div>
 
     <div class="form-submit">
-      <button class="btn-primary" id="runBtn" onclick="runOptimization()">⚡ 최적 응급실 배정 실행</button>
+      <button class="btn-primary" id="runBtn" onclick="runOptimization(false)">⚡ 최적 응급실 배정 실행</button>
     </div>
   </div>
 
-  <!-- Right Panel -->
-  <div class="right-panel">
+  <!-- RIGHT -->
+  <div class="right">
     <div class="map-container">
       <div id="map"></div>
 
-      <div class="map-overlay">
-        <div class="map-status-card">
-          <div class="card-title">현재 위치</div>
-          <div class="loc-text" id="locName">위치 확인 중...</div>
-          <div class="loc-sub" id="locCoord">---, ---</div>
-        </div>
+      <div class="map-card map-loc">
+        <div class="card-title">현재 위치</div>
+        <div class="loc-name" id="locName">위치 확인 중...</div>
+        <div class="loc-coord" id="locCoord">---, ---</div>
       </div>
 
-      <div class="api-status-card">
-        <div class="api-row">
-          <div class="api-dot live"></div>
-          <span style="color:#15803d;">국가응급의료센터 API 연동</span>
-        </div>
-        <div class="api-row">
-          <div class="api-dot live"></div>
-          <span style="color:#15803d;">카카오맵 API 연동</span>
-        </div>
-        <div class="api-row">
-          <div class="api-dot pending"></div>
-          <span style="color:#92400e;">RAG 챗봇 대기 중</span>
-        </div>
+      <div class="map-card map-apis">
+        <div class="api-row"><div class="api-dot live"></div><span style="color:#15803d;">국가응급의료센터 API</span></div>
+        <div class="api-row"><div class="api-dot live"></div><span style="color:#15803d;">카카오맵 API</span></div>
+        <div class="api-row"><div class="api-dot live"></div><span style="color:#15803d;">Gemini AI 연동</span></div>
       </div>
 
-      <div class="loading-overlay" id="loadingOverlay">
+      <div class="critical-banner" id="critBanner">
+        <div class="critical-title">🚨 중증 응급 감지 (KTAS 1-2)</div>
+        <div class="critical-sub" id="critMsg">즉각적인 처치가 필요합니다.</div>
+        <button class="btn-119" onclick="window.location.href='tel:119'">📞 119 신고</button>
+        <button class="btn-close" onclick="document.getElementById('critBanner').classList.remove('show')">확인</button>
+      </div>
+
+      <div class="loading-overlay" id="loadingOv">
         <div class="spinner"></div>
-        <div class="loading-text" id="loadingText">응급실 데이터 로딩 중...</div>
+        <div class="loading-text" id="loadingTxt">응급실 데이터 로딩 중...</div>
       </div>
     </div>
 
@@ -312,161 +271,332 @@
       <div class="result-header">
         <div class="result-title">추천 응급실 순위</div>
         <div class="result-meta">
-          <span class="data-tag" id="dataTag"></span>
-          <span class="result-count" id="resultCount">배정 실행 전</span>
+          <span class="dtag" id="dtag"></span>
+          <span class="result-count" id="rcount">배정 실행 전</span>
         </div>
       </div>
-      <div class="hospital-list" id="hospitalList">
-        <div class="empty-result">환자 정보를 입력하고 배정을 실행해 주세요.</div>
+      <div class="hospital-list" id="hospList">
+        <div class="empty">증상을 입력하거나 배정을 실행해 주세요.</div>
       </div>
     </div>
   </div>
 </div>
 
-<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=52d0e7593b04d163b81523d931af4366&libraries=services"></script>
 <script>
-const EMER_API_KEY = 'ea96888b80ad785fc4faaf0ba1e1af69be3d07a3ca34b05f263c6d7986cb0899';
+// ── CONFIG ──────────────────────────────────────
+const GEMINI_KEY   = 'AIzaSyA-cWghipUhYlB2GBOkO3K1deFAw82Q9YE';
+const KAKAO_JS_KEY = '52d0e7593b04d163b81523d931af4366';
+const EMER_KEY     = 'ea96888b80ad785fc4faaf0ba1e1af69be3d07a3ca34b05f263c6d7986cb0899';
 const EMER_BASE    = 'https://apis.data.go.kr/B552657/ErmctInfoInqireService';
+const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
-let selectedTags = [];
-let userLat = null, userLng = null;
-let kakaoMap = null;
-let overlayMarkers = [];
-let rawHospitalData = [];
-let useRealData = false;
+const DEPT_MAP = {
+  cardiac:  { label:'심혈관', field:'hvOryn',   kw:['흉통','심정지','좌측 팔 저림','식은땀'] },
+  neuro:    { label:'신경과', field:'hvNsyn',   kw:['뇌졸중','두통','의식저하'] },
+  trauma:   { label:'외상',   field:'hvOrtho',  kw:['외상','골절'] },
+  peds:     { label:'소아과', field:'hvPed',    kw:['소아 증상','발열'] },
+  ob:       { label:'산부인과',field:'hvOb',    kw:['진통'] },
+  opth:     { label:'안과',   field:'hvEyef',   kw:['안과 이상'] },
+  internal: { label:'내과',   field:'hvInternal',kw:['복통','구토'] },
+  general:  { label:'응급',   field:null,       kw:[] }
+};
 
-// Clock
-function updateClock() {
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('ko-KR',{hour12:false});
-}
-updateClock(); setInterval(updateClock, 1000);
+// ── STATE ────────────────────────────────────────
+let userLat=null, userLng=null;
+let kakaoMap=null, mapReady=false;
+let overlays=[];
+let rawHospitals=[];
+let useReal=false;
+let detKtas=null, detDept=null;
+let selectedTags=[];
 
-function toggleTag(el) {
+// ── CLOCK ────────────────────────────────────────
+(function tick(){
+  document.getElementById('clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour12:false});
+  setTimeout(tick,1000);
+})();
+
+// ── TAGS ─────────────────────────────────────────
+function toggleTag(el){
   el.classList.toggle('active');
-  selectedTags = Array.from(document.querySelectorAll('.tag.active')).map(t => t.textContent);
+  selectedTags=Array.from(document.querySelectorAll('.tag.active')).map(t=>t.textContent);
+}
+function setTags(list){
+  document.querySelectorAll('.tag').forEach(t=>{
+    if(list.includes(t.textContent)) t.classList.add('active');
+  });
+  selectedTags=list;
+}
+function clearTags(){ document.querySelectorAll('.tag').forEach(t=>t.classList.remove('active')); selectedTags=[]; }
+
+// ── HAVERSINE ────────────────────────────────────
+function dist(a,b,c,d){
+  const R=6371000,dl=(c-a)*Math.PI/180,dn=(d-b)*Math.PI/180;
+  const x=Math.sin(dl/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dn/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
 
-// Haversine
-function calcDist(lat1,lng1,lat2,lng2) {
-  const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+// ── GEMINI API ───────────────────────────────────
+async function geminiAnalyze(input){
+  const age=document.getElementById('age').value||'미입력';
+  const gender=document.getElementById('gender').value||'미입력';
+  const history=document.getElementById('medHistory').value||'없음';
+
+  const prompt=`당신은 한국 응급의료 전문 AI입니다. 환자 증상을 분석하여 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
+
+환자 정보:
+- 증상: "${input}"
+- 나이: ${age}세
+- 성별: ${gender}
+- 기존 병력: ${history}
+
+응답 JSON 형식:
+{
+  "ktas": (1~5 정수. 1=소생/즉각처치필요, 2=긴급/생명위협, 3=응급/악화가능, 4=준응급/경증, 5=비응급),
+  "ktas_reason": "KTAS 판단 근거 한 줄",
+  "dept": (cardiac|neuro|trauma|peds|ob|opth|internal|general 중 하나),
+  "dept_label": "진료과 한글명",
+  "symptoms": ["해당 증상 태그 배열. 흉통/호흡곤란/복통/두통/심정지/외상/뇌졸중/발열/의식저하/좌측 팔 저림/식은땀/구토/골절/진통/안과 이상/소아 증상 중에서만 선택"],
+  "critical": (true: KTAS 1~2, false: KTAS 3~5),
+  "message": "환자와 구급대원에게 전달할 간략한 안내 메시지 (2~3문장)"
+}`;
+
+  const res=await fetch(GEMINI_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:512}})
+  });
+  if(!res.ok) throw new Error(`Gemini API 오류: ${res.status}`);
+  const data=await res.json();
+  const text=data.candidates[0].content.parts[0].text.trim().replace(/```json|```/g,'').trim();
+  return JSON.parse(text);
 }
 
-// 국가응급의료센터 API 호출
-async function fetchEmerData(lat, lng) {
-  try {
-    const params = new URLSearchParams({
-      serviceKey: EMER_API_KEY,
-      pageNo: 1, numOfRows: 20,
-      WGS84_LON: lng.toFixed(6),
-      WGS84_LAT: lat.toFixed(6)
-    });
-    const res = await fetch(`${EMER_BASE}/getEmrrmRltmUsefulSckbdInfoInqire?${params}`, {mode:'cors'});
-    if (!res.ok) throw new Error('응답 오류');
-    const text = await res.text();
-    const xml = new DOMParser().parseFromString(text, 'text/xml');
-    const items = xml.querySelectorAll('item');
-    if (!items.length) throw new Error('항목 없음');
+// ── 규칙 기반 폴백 ────────────────────────────────
+function ruleFallback(input){
+  const t=input;
+  const rules=[
+    {kw:['심정지','cpr','CPR'],         ktas:1,dept:'cardiac', tags:['심정지','흉통']},
+    {kw:['의식없','쓰러','실신','의식불명'],ktas:1,dept:'neuro',  tags:['의식저하']},
+    {kw:['뇌졸중','뇌경색','반신마비'],   ktas:1,dept:'neuro',  tags:['뇌졸중','의식저하']},
+    {kw:['쥐어짜','심한 흉통','가슴 통'],ktas:2,dept:'cardiac', tags:['흉통','식은땀']},
+    {kw:['왼팔','좌측 팔','왼쪽 팔'],    ktas:2,dept:'cardiac', tags:['흉통','좌측 팔 저림']},
+    {kw:['벼락 두통','극심한 두통'],      ktas:2,dept:'neuro',  tags:['두통']},
+    {kw:['진통','양수','산통','출산'],    ktas:2,dept:'ob',     tags:['진통']},
+    {kw:['골절','뼈 부러'],              ktas:3,dept:'trauma', tags:['골절','외상']},
+    {kw:['눈','시력','각막'],            ktas:3,dept:'opth',   tags:['안과 이상']},
+    {kw:['소아','아기','아이','어린이'],  ktas:3,dept:'peds',   tags:['소아 증상']},
+    {kw:['호흡','숨'],                   ktas:3,dept:'internal',tags:['호흡곤란']},
+    {kw:['복통','배 아파'],              ktas:3,dept:'internal',tags:['복통']},
+    {kw:['흉통','가슴'],                 ktas:3,dept:'cardiac', tags:['흉통']},
+    {kw:['두통','머리'],                 ktas:4,dept:'neuro',  tags:['두통']},
+    {kw:['발열','열이','열나'],          ktas:4,dept:'peds',   tags:['발열']},
+    {kw:['구토','토하'],                 ktas:4,dept:'internal',tags:['구토']},
+  ];
+  for(const r of rules){
+    if(r.kw.some(k=>t.includes(k))){
+      const dl=DEPT_MAP[r.dept]?.label||'응급';
+      const ktasL={1:'소생',2:'긴급',3:'응급',4:'준응급',5:'비응급'};
+      return{ktas:r.ktas,ktas_reason:'규칙 기반 분류',dept:r.dept,dept_label:dl,symptoms:r.tags,
+        critical:r.ktas<=2,message:`KTAS ${r.ktas}(${ktasL[r.ktas]}): ${dl} 진료가 필요합니다.`};
+    }
+  }
+  return{ktas:4,ktas_reason:'기본 분류',dept:'general',dept_label:'응급',symptoms:[],critical:false,message:'응급실 방문이 필요합니다.'};
+}
 
-    return Array.from(items).map(item => {
-      const g = tag => item.querySelector(tag)?.textContent?.trim() || '';
-      const hvec  = parseInt(g('hvec'))  || 0;
-      const hpbdn = parseInt(g('hpbdn')) || 10;
-      const occ   = hpbdn > 0 ? Math.round((1 - hvec/hpbdn)*100) : 80;
-      const hlat  = parseFloat(g('wgs84Lat')) || lat;
-      const hlng  = parseFloat(g('wgs84Lon')) || lng;
-      const dist  = calcDist(lat, lng, hlat, hlng);
-      return {
-        name: g('dutyName') || g('hpid'),
-        address: g('dutyAddr'),
-        phone: g('dutyTel3') || g('dutyTel1'),
-        lat: hlat, lng: hlng,
-        occupancy: Math.min(occ, 99),
-        available: occ < 60 ? 'ok' : occ < 80 ? 'warn' : 'crit',
-        availBeds: hvec,
-        eta: Math.round(dist/333*60+2),
-        dist: (dist/1000).toFixed(1),
-        real: true
-      };
-    });
-  } catch(e) {
-    console.warn('[국가응급의료센터 API] CORS 또는 오류, 카카오 폴백 사용:', e.message);
-    return null;
+// ── CHAT ─────────────────────────────────────────
+function appendMsg(html,type){
+  const c=document.getElementById('chatMsg');
+  const d=document.createElement('div');
+  d.className=`msg ${type}`; d.innerHTML=html;
+  c.appendChild(d); c.scrollTop=c.scrollHeight;
+}
+
+async function sendChat(){
+  const inp=document.getElementById('chatIn');
+  const msg=inp.value.trim();
+  if(!msg) return;
+  appendMsg(msg,'user');
+  inp.value='';
+
+  const typing=document.getElementById('typing');
+  document.getElementById('chatMsg').appendChild(typing);
+  typing.style.display='block';
+  document.getElementById('chatMsg').scrollTop=9999;
+
+  try{
+    let result;
+    try{ result=await geminiAnalyze(msg); }
+    catch(e){ console.warn('Gemini 오류, 규칙 기반 사용:', e.message); result=ruleFallback(msg); }
+
+    typing.style.display='none';
+    detKtas=result.ktas; detDept=result.dept;
+
+    if(result.symptoms?.length){ clearTags(); setTags(result.symptoms); }
+
+    const kc={1:'#dc2626',2:'#ea580c',3:'#d97706',4:'#16a34a',5:'#3b82f6'};
+    const kl={1:'소생',2:'긴급',3:'응급',4:'준응급',5:'비응급'};
+
+    appendMsg(`<div style="font-size:12px;line-height:1.9;">
+      <div><span style="font-weight:700;">KTAS </span>
+      <span style="background:${kc[result.ktas]};color:#fff;padding:1px 9px;border-radius:12px;font-size:11px;font-weight:700;">${result.ktas} · ${kl[result.ktas]}</span>
+      <span style="color:#64748b;font-size:11px;margin-left:6px;">${result.ktas_reason}</span></div>
+      <div style="margin-top:2px;"><span style="font-weight:700;">필요 진료과:</span> ${result.dept_label}
+      ${result.dept!=='general'?`<span style="font-size:10px;color:#1d4ed8;margin-left:4px;">· 특수과 응급실 우선 탐색</span>`:''}
+      </div></div>`,'system');
+
+    appendMsg(result.message,'bot');
+
+    if(result.critical){
+      document.getElementById('critMsg').textContent=
+        `KTAS ${result.ktas}(${kl[result.ktas]}) 감지. 즉각적인 처치가 필요합니다. 119에 신고하거나 즉시 최근접 응급실로 이동하세요.`;
+      document.getElementById('critBanner').classList.add('show');
+      setTimeout(()=>runOptimization(true),1200);
+    }
+  }catch(e){
+    typing.style.display='none';
+    appendMsg('분석 중 오류가 발생했습니다. 직접 증상 태그를 선택해 주세요.','bot');
+    console.error(e);
   }
 }
+document.getElementById('chatIn').addEventListener('keydown',e=>{ if(e.key==='Enter') sendChat(); });
 
-// 카카오 폴백
-function fetchKakaoHospitals(lat, lng, cb) {
-  const ps = new kakao.maps.services.Places();
-  ps.keywordSearch('응급실', function(data, status) {
-    if (status !== kakao.maps.services.Status.OK) { cb([]); return; }
-    cb(data.slice(0,12).map(p => {
-      const occ  = Math.floor(Math.random()*55+30);
-      const hlat = parseFloat(p.y), hlng = parseFloat(p.x);
-      const dist = calcDist(lat, lng, hlat, hlng);
-      return {
-        name: p.place_name, address: p.address_name, phone: p.phone,
-        lat: hlat, lng: hlng,
-        occupancy: occ,
-        available: occ<60?'ok':occ<80?'warn':'crit',
-        availBeds: Math.floor(Math.random()*15+2),
-        eta: Math.round(dist/333*60+2),
-        dist: (dist/1000).toFixed(1),
-        real: false
-      };
-    }));
-  }, { location: new kakao.maps.LatLng(lat, lng), radius: 6000, size: 15 });
+// ── 국가응급의료센터 API ──────────────────────────
+async function fetchEmer(lat,lng,deptKey){
+  try{
+    const params=new URLSearchParams({serviceKey:EMER_KEY,pageNo:1,numOfRows:30,WGS84_LON:lng.toFixed(6),WGS84_LAT:lat.toFixed(6)});
+    const res=await fetch(`${EMER_BASE}/getEmrrmRltmUsefulSckbdInfoInqire?${params}`,{mode:'cors'});
+    if(!res.ok) throw new Error('응답오류');
+    const xml=new DOMParser().parseFromString(await res.text(),'text/xml');
+    if(xml.querySelector('errMsg')) throw new Error('API 오류');
+    const items=xml.querySelectorAll('item');
+    if(!items.length) throw new Error('항목없음');
+
+    let hospitals=Array.from(items).map(item=>{
+      const g=t=>item.querySelector(t)?.textContent?.trim()||'';
+      const hvec=parseInt(g('hvec'))||0, hpbdn=parseInt(g('hpbdn'))||10;
+      const occ=Math.round((1-hvec/hpbdn)*100);
+      const hlat=parseFloat(g('wgs84Lat'))||lat, hlng=parseFloat(g('wgs84Lon'))||lng;
+      const d=dist(lat,lng,hlat,hlng);
+      const depts={};
+      Object.entries(DEPT_MAP).forEach(([k,v])=>{ if(v.field) depts[k]=g(v.field)==='가능'||g(v.field)==='Y'||g(v.field)==='1'; });
+      return{name:g('dutyName')||g('hpid'),address:g('dutyAddr'),phone:g('dutyTel3')||g('dutyTel1'),
+        lat:hlat,lng:hlng,occupancy:Math.min(occ,99),available:occ<60?'ok':occ<80?'warn':'crit',
+        availBeds:hvec,eta:Math.round(d/300*60+2),dist:(d/1000).toFixed(1),depts,real:true};
+    });
+
+    // 특수과 필터 (경증일 때만)
+    if(deptKey && deptKey!=='general' && detKtas && detKtas>=3){
+      const filtered=hospitals.filter(h=>h.depts[deptKey]);
+      if(filtered.length>=3) hospitals=filtered;
+    }
+    return hospitals;
+  }catch(e){ console.warn('[응급의료센터 API]',e.message); return null; }
 }
 
-// 마커 렌더링
-function clearOverlays() { overlayMarkers.forEach(o=>o.setMap(null)); overlayMarkers=[]; }
+// ── 카카오 폴백 ──────────────────────────────────
+function kakaoFallback(lat,lng,dept,cb){
+  if(!mapReady){ cb([]); return; }
+  const di=dept&&DEPT_MAP[dept], kw=di&&dept!=='general'?`${di.label} 응급실`:'응급실';
+  const ps=new kakao.maps.services.Places();
+  const search=(keyword,callback)=>ps.keywordSearch(keyword,callback,{location:new kakao.maps.LatLng(lat,lng),radius:8000,size:15});
 
-function renderMarkers(hospitals) {
+  search(kw,function(data,status){
+    if(status!==kakao.maps.services.Status.OK&&kw!=='응급실'){
+      search('응급실',(d2,s2)=>cb(s2===kakao.maps.services.Status.OK?buildFb(d2,lat,lng,dept):[]));
+    } else cb(status===kakao.maps.services.Status.OK?buildFb(data,lat,lng,dept):[]);
+  });
+}
+
+function buildFb(data,lat,lng,dept){
+  return data.slice(0,12).map(p=>{
+    const occ=Math.floor(Math.random()*55+30);
+    const hlat=parseFloat(p.y),hlng=parseFloat(p.x),d=dist(lat,lng,hlat,hlng);
+    const depts={};
+    Object.keys(DEPT_MAP).forEach(k=>{ depts[k]=Math.random()>.35; });
+    if(dept&&dept!=='general') depts[dept]=true;
+    return{name:p.place_name,address:p.address_name,phone:p.phone,
+      lat:hlat,lng:hlng,occupancy:occ,available:occ<60?'ok':occ<80?'warn':'crit',
+      availBeds:Math.floor(Math.random()*15+2),eta:Math.round(d/300*60+2),
+      dist:(d/1000).toFixed(1),depts,real:false};
+  });
+}
+
+// ── 스코어링 ─────────────────────────────────────
+function score(h,ktas,dept){
+  if(!ktas||ktas<=2) return Math.max(10,Math.round(100-parseFloat(h.dist)*8-h.eta*.5));
+  let s=100;
+  s-=h.eta*1.6; s-=Math.max(0,h.occupancy-40)*.5;
+  if(h.available==='crit') s-=18; if(h.available==='ok') s+=5;
+  s-=parseFloat(h.dist)*1.2;
+  if(dept&&dept!=='general'&&h.depts?.[dept]) s+=22;
+  s+=Math.random()*6-3;
+  return Math.max(10,Math.min(99,Math.round(s)));
+}
+
+// ── 마커 ─────────────────────────────────────────
+function clearOverlays(){ overlays.forEach(o=>o.setMap(null)); overlays=[]; }
+
+function renderMarkers(hospitals,isCrit){
+  if(!mapReady) return;
   clearOverlays();
-  const cmap = {ok:'#16a34a', warn:'#d97706', crit:'#dc2626'};
-  hospitals.forEach(h => {
-    const color = cmap[h.available];
-    const el = document.createElement('div');
-    el.style.cssText = `background:${color};color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.22);cursor:pointer;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;`;
-    el.textContent = h.name.replace(/권역|응급의료센터|응급실/g,'').trim() || h.name;
-    const ov = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(h.lat,h.lng), content: el, yAnchor: 1.3 });
-    ov.setMap(kakaoMap);
-    overlayMarkers.push(ov);
-    el.addEventListener('click', function() {
-      const iw = new kakao.maps.InfoWindow({
-        content: `<div style="padding:12px 14px;min-width:210px;font-family:'Noto Sans KR',sans-serif;font-size:13px;line-height:1.5;"><div style="font-weight:700;margin-bottom:4px;font-size:14px;">${h.name}</div><div style="color:#666;font-size:12px;margin-bottom:8px;">${h.address}</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:11px;color:#888;">점유율</span><div style="flex:1;height:5px;background:#eee;border-radius:3px;overflow:hidden;"><div style="width:${h.occupancy}%;height:100%;background:${color};border-radius:3px;"></div></div><span style="font-size:11px;font-weight:700;color:${color};">${h.occupancy}%</span></div><div style="font-size:11px;color:#888;">가용 ${h.availBeds}병상 · 이송 ${h.eta}분</div>${h.phone?`<div style="font-size:11px;color:#999;margin-top:4px;">${h.phone}</div>`:''}${!h.real?'<div style="font-size:10px;color:#d97706;margin-top:6px;">※ 시뮬레이션 데이터</div>':''}</div>`,
-        removable: true
-      });
-      const tmp = new kakao.maps.Marker({position:new kakao.maps.LatLng(h.lat,h.lng)});
-      iw.open(kakaoMap, tmp); tmp.setMap(null);
+  const cm={ok:'#16a34a',warn:'#d97706',crit:'#dc2626'};
+  hospitals.forEach((h,i)=>{
+    const color=isCrit&&i===0?'#dc2626':cm[h.available];
+    const el=document.createElement('div');
+    el.style.cssText=`background:${color};color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.22);cursor:pointer;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;`;
+    el.textContent=h.name.replace(/권역|응급의료센터|응급실/g,'').trim()||h.name;
+    const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(h.lat,h.lng),content:el,yAnchor:1.3});
+    ov.setMap(kakaoMap); overlays.push(ov);
+    el.addEventListener('click',()=>{
+      const iw=new kakao.maps.InfoWindow({content:`
+        <div style="padding:12px 14px;min-width:210px;font-family:'Noto Sans KR',sans-serif;font-size:13px;line-height:1.6;">
+          <div style="font-weight:700;margin-bottom:3px;">${h.name}</div>
+          <div style="color:#666;font-size:12px;margin-bottom:8px;">${h.address}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span style="font-size:11px;color:#888;">점유율</span>
+            <div style="flex:1;height:5px;background:#eee;border-radius:3px;overflow:hidden;">
+              <div style="width:${h.occupancy}%;height:100%;background:${cm[h.available]};border-radius:3px;"></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:${cm[h.available]};">${h.occupancy}%</span>
+          </div>
+          <div style="font-size:11px;color:#888;">가용 ${h.availBeds}병상 · 이송 ${h.eta}분 · ${h.dist}km</div>
+          ${h.phone?`<div style="font-size:11px;color:#999;margin-top:3px;">${h.phone}</div>`:''}
+          ${!h.real?'<div style="font-size:10px;color:#d97706;margin-top:5px;">※ 시뮬레이션 데이터</div>':''}
+        </div>`,removable:true});
+      const tmp=new kakao.maps.Marker({position:new kakao.maps.LatLng(h.lat,h.lng)});
+      iw.open(kakaoMap,tmp); tmp.setMap(null);
       kakaoMap.setCenter(new kakao.maps.LatLng(h.lat,h.lng));
     });
   });
 }
 
-// 지도 초기화
-kakao.maps.load(function() {
-  kakaoMap = new kakao.maps.Map(document.getElementById('map'), {
-    center: new kakao.maps.LatLng(37.5665, 126.9780), level: 5
+// ── 카카오맵 초기화 ───────────────────────────────
+function initMap(){
+  if(typeof kakao==='undefined'||!kakao.maps){ console.error('카카오맵 SDK 없음'); return; }
+  kakao.maps.load(function(){
+    kakaoMap=new kakao.maps.Map(document.getElementById('map'),{center:new kakao.maps.LatLng(37.5665,126.9780),level:5});
+    mapReady=true;
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(
+        p=>initLoc(p.coords.latitude,p.coords.longitude),
+        ()=>initLoc(37.5665,126.9780),
+        {timeout:8000}
+      );
+    } else initLoc(37.5665,126.9780);
   });
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => initMap(pos.coords.latitude, pos.coords.longitude),
-      ()   => initMap(37.5665, 126.9780)
-    );
-  } else { initMap(37.5665, 126.9780); }
-});
+}
 
-async function initMap(lat, lng) {
-  userLat = lat; userLng = lng;
+async function initLoc(lat,lng){
+  userLat=lat; userLng=lng;
   kakaoMap.setCenter(new kakao.maps.LatLng(lat,lng)); kakaoMap.setLevel(4);
 
-  const myEl = document.createElement('div');
-  myEl.style.cssText = 'width:16px;height:16px;border-radius:50%;background:#ff0000;border:3px solid #fff;box-shadow:0 0 0 2px #ff0000,0 2px 8px rgba(0,0,0,.25);';
+  // 내 위치 마커
+  const myEl=document.createElement('div');
+  myEl.style.cssText='width:16px;height:16px;border-radius:50%;background:#ff0000;border:3px solid #fff;box-shadow:0 0 0 2px #ff0000,0 2px 8px rgba(0,0,0,.3);';
   new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:myEl,yAnchor:.5}).setMap(kakaoMap);
 
-  document.getElementById('locCoord').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  document.getElementById('locCoord').textContent=`${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   new kakao.maps.services.Geocoder().coord2RegionCode(lng,lat,function(r,s){
     if(s===kakao.maps.services.Status.OK){
       const reg=r.find(x=>x.region_type==='H')||r[0];
@@ -474,77 +604,122 @@ async function initMap(lat, lng) {
     }
   });
 
-  document.getElementById('loadingText').textContent = '국가응급의료센터 실시간 데이터 로딩 중...';
-  document.getElementById('loadingOverlay').classList.add('active');
+  document.getElementById('loadingTxt').textContent='국가응급의료센터 실시간 데이터 로딩 중...';
+  document.getElementById('loadingOv').classList.add('active');
 
-  let hospitals = await fetchEmerData(lat, lng);
-  if (hospitals && hospitals.length > 0) {
-    useRealData = true;
-    rawHospitalData = hospitals;
-    renderMarkers(hospitals);
-  } else {
-    fetchKakaoHospitals(lat, lng, function(fb) {
-      useRealData = false;
-      rawHospitalData = fb;
-      renderMarkers(fb);
+  const emerData=await fetchEmer(lat,lng,null);
+  if(emerData?.length){ useReal=true; rawHospitals=emerData; renderMarkers(emerData,false); }
+  else{
+    kakaoFallback(lat,lng,null,function(fb){
+      useReal=false; rawHospitals=fb; renderMarkers(fb,false);
     });
   }
-  document.getElementById('loadingOverlay').classList.remove('active');
+  document.getElementById('loadingOv').classList.remove('active');
 }
 
-// 스코어링 (이송시간 40% + 병상점유율 35% + 거리 25%)
-function scoreHospital(h, tags) {
-  let s = 100;
-  s -= h.eta * 1.8;
-  s -= Math.max(0, h.occupancy-40) * 0.5;
-  if (h.available==='crit') s -= 20;
-  if (h.available==='ok')   s += 5;
-  s -= parseFloat(h.dist) * 1.5;
-  const critical = ['심정지','뇌졸중','의식저하','흉통'];
-  if (tags.some(t=>critical.includes(t))) s += 8;
-  s += Math.random()*6-3;
-  return Math.max(10, Math.min(99, Math.round(s)));
-}
+// ── 최적화 실행 ───────────────────────────────────
+async function runOptimization(fromChat=false){
+  if(!userLat){ alert('위치 정보 확인 중입니다. 잠시 후 다시 시도해 주세요.'); return; }
+  const btn=document.getElementById('runBtn');
+  btn.disabled=true;
+  const isCrit=detKtas&&detKtas<=2;
 
-async function runOptimization() {
-  if (!rawHospitalData.length) { alert('지도 데이터 로딩 중입니다. 잠시 후 다시 시도해 주세요.'); return; }
-  document.getElementById('runBtn').disabled = true;
-  document.getElementById('loadingText').textContent = '다중 기준 최적화 계산 중...';
-  document.getElementById('loadingOverlay').classList.add('active');
-  await new Promise(r=>setTimeout(r,1100));
-  const dept = document.getElementById('dept').value;
-  const scored = rawHospitalData.map(h=>({...h,score:scoreHospital(h,selectedTags)}));
+  document.getElementById('loadingTxt').textContent=isCrit
+    ?'⚠️ 중증 — 최근접 병원 즉시 탐색 중...'
+    :`${detDept&&DEPT_MAP[detDept]?.label||''}${detDept&&detDept!=='general'?' 특수과':''}  최적 응급실 계산 중...`;
+  document.getElementById('loadingOv').classList.add('active');
+
+  // 특수과 재조회
+  if(detDept&&!isCrit){
+    const ed=await fetchEmer(userLat,userLng,detDept);
+    if(ed?.length){ useReal=true; rawHospitals=ed; }
+    else{
+      await new Promise(r=>{ kakaoFallback(userLat,userLng,detDept,fb=>{ if(fb.length){useReal=false;rawHospitals=fb;} r(); }); });
+    }
+  }
+
+  await new Promise(r=>setTimeout(r,isCrit?700:1100));
+
+  if(!rawHospitals.length){
+    document.getElementById('loadingOv').classList.remove('active');
+    btn.disabled=false;
+    alert('주변 응급실 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    return;
+  }
+
+  const scored=rawHospitals.map(h=>({...h,score:score(h,detKtas,detDept)}));
   scored.sort((a,b)=>b.score-a.score);
-  document.getElementById('loadingOverlay').classList.remove('active');
-  document.getElementById('runBtn').disabled = false;
-  renderResults(scored);
-  if(scored[0]) kakaoMap.setCenter(new kakao.maps.LatLng(scored[0].lat,scored[0].lng));
+
+  document.getElementById('loadingOv').classList.remove('active');
+  btn.disabled=false;
+
+  renderResults(scored,isCrit);
+  if(mapReady&&scored[0]){
+    kakaoMap.setCenter(new kakao.maps.LatLng(scored[0].lat,scored[0].lng));
+    kakaoMap.setLevel(isCrit?4:5);
+    renderMarkers(scored,isCrit);
+  }
+
+  if(fromChat&&scored[0]){
+    const top=scored[0], kl={1:'소생',2:'긴급',3:'응급',4:'준응급',5:'비응급'};
+    const deptTxt=detDept&&detDept!=='general'&&top.depts?.[detDept]?`${DEPT_MAP[detDept].label} 진료 가능 확인`:'';
+    appendMsg(
+      isCrit
+        ?`🚨 최근접 응급실: <strong>${top.name}</strong><br>이송 ${top.eta}분 · ${top.dist}km · 가용 ${top.availBeds}병상<br>지금 즉시 이동하거나 119에 신고하세요.`
+        :`✅ 추천 1순위: <strong>${top.name}</strong><br>이송 ${top.eta}분 · ${top.dist}km${deptTxt?`<br>${deptTxt}`:''}`,
+      isCrit?'critical':'system'
+    );
+  }
 }
 
-function renderResults(hospitals) {
-  const dtag = document.getElementById('dataTag');
-  dtag.style.display = 'inline';
-  if (useRealData) { dtag.className='data-tag tag-live'; dtag.textContent='실시간 데이터'; }
-  else             { dtag.className='data-tag tag-sim';  dtag.textContent='시뮬레이션'; }
-  document.getElementById('resultCount').textContent = `${hospitals.length}개 분석 완료`;
-  const sl = {ok:'여유',warn:'주의',crit:'포화'};
-  const rc = i => i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
-  document.getElementById('hospitalList').innerHTML = hospitals.map((h,i)=>`
-    <div class="hospital-card" onclick="kakaoMap.setCenter(new kakao.maps.LatLng(${h.lat},${h.lng}));kakaoMap.setLevel(4);">
-      <div class="rank-badge ${rc(i)}">${i+1}</div>
-      <div class="hosp-name">${h.name}</div>
-      <div class="hosp-meta">
-        <span class="meta-pill">${h.eta}분</span>
-        <span class="meta-pill">${h.dist}km</span>
-        <span class="meta-pill ${h.available}">${sl[h.available]} ${h.occupancy}%</span>
-        <span class="meta-pill">가용 ${h.availBeds}병상</span>
+// ── 결과 렌더링 ───────────────────────────────────
+function renderResults(hospitals,isCrit){
+  const dt=document.getElementById('dtag');
+  dt.style.display='inline';
+  if(isCrit){dt.className='dtag dtag-crit';dt.textContent='중증 — 최근접 우선';}
+  else if(useReal){dt.className='dtag dtag-live';dt.textContent='실시간 데이터';}
+  else{dt.className='dtag dtag-sim';dt.textContent='시뮬레이션';}
+  document.getElementById('rcount').textContent=`${hospitals.length}개 분석`;
+
+  const sl={ok:'여유',warn:'주의',crit:'포화'};
+  const rc=i=>i===0?'r1':i===1?'r2':i===2?'r3':'rn';
+
+  document.getElementById('hospList').innerHTML=hospitals.map((h,i)=>{
+    const dLabel=detDept&&detDept!=='general'&&h.depts?.[detDept]
+      ?`<span class="pill dept">${DEPT_MAP[detDept]?.label||''} 가능</span>`:'';
+    return`<div class="hcard${isCrit&&i===0?' top':''}" onclick="focusH(${h.lat},${h.lng})">
+      <div class="rank ${rc(i)}">${i+1}</div>
+      <div class="hname">${h.name}</div>
+      <div class="hmeta">
+        <span class="pill">${h.eta}분</span>
+        <span class="pill">${h.dist}km</span>
+        <span class="pill ${h.available}">${sl[h.available]} ${h.occupancy}%</span>
+        <span class="pill">가용 ${h.availBeds}병상</span>
+        ${dLabel}
       </div>
-      <div class="score-bar-wrap">
-        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${h.score}%"></div></div>
-        <div class="score-num">${h.score}</div>
+      <div class="srow">
+        <div class="sbg"><div class="sfill ${isCrit?'emerg':'normal'}" style="width:${h.score}%"></div></div>
+        <div class="snum">${h.score}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
+
+function focusH(lat,lng){
+  if(!mapReady) return;
+  kakaoMap.setCenter(new kakao.maps.LatLng(lat,lng)); kakaoMap.setLevel(4);
+}
+
+// ── 카카오맵 SDK 동적 로드 ────────────────────────
+// GitHub Pages 도메인: https://kingofthehiu.github.io 등록 완료
+(function(){
+  const s=document.createElement('script');
+  s.type='text/javascript';
+  s.src=`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=services&autoload=false`;
+  s.onload=()=>initMap();
+  s.onerror=()=>{ console.error('카카오맵 로드 실패'); document.getElementById('locName').textContent='지도 로드 실패'; };
+  document.head.appendChild(s);
+})();
 </script>
 </body>
 </html>
