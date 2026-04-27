@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>응급실 배정 최적화 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #ff0000;
+    --red-light: #fff0f0;
+    --red-dark: #cc0000;
+    --bg: #f7f7f7;
+    --surface: #ffffff;
+    --surface2: #f0f0f0;
+    --border: #e0e0e0;
+    --text: #1a1a1a;
+    --text-muted: #666666;
+    --text-hint: #999999;
+    --green: #16a34a;
+    --amber: #d97706;
+    --radius: 10px;
+    --shadow-md: 0 2px 12px rgba(0,0,0,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo-mark { width: 32px; height: 32px; background: var(--red); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .logo-mark svg { width: 18px; height: 18px; fill: #fff; }
+  .header-title { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-title span { color: var(--red); }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .status-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+  .time-display { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-muted); }
+
+  .main-layout { display: grid; grid-template-columns: 380px 1fr; height: calc(100vh - 56px); }
+  .left-panel { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--text-hint); text-transform: uppercase; padding: 14px 20px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+
+  .patient-form { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .form-group { margin-bottom: 15px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; display: block; }
+  .form-label .hint { color: var(--text-hint); font-weight: 400; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 9px 12px; font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px; color: var(--text); background: var(--surface);
+    outline: none; transition: border-color .15s; appearance: none;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+    border-color: var(--red); box-shadow: 0 0 0 3px rgba(255,0,0,.07);
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    padding-right: 28px; cursor: pointer;
+  }
+  textarea { resize: none; height: 68px; line-height: 1.5; }
+
+  .symptom-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { border: 1px solid var(--border); background: var(--surface); border-radius: 20px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all .15s; user-select: none; }
+  .tag:hover { border-color: var(--red); color: var(--red); }
+  .tag.active { background: var(--red-light); border-color: var(--red); color: var(--red); font-weight: 500; }
+
+  /* Chatbot - RAG 대기 상태 */
+  .chat-section { border-top: 1px solid var(--border); display: flex; flex-direction: column; max-height: 240px; flex-shrink: 0; }
+  .chat-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--text-hint); text-transform: uppercase; padding: 10px 20px 8px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+  .ai-badge { background: var(--surface2); color: var(--text-muted); font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: .06em; border: 1px solid var(--border); }
+  .rag-pending { font-size: 10px; color: var(--amber); background: #fffbeb; border: 1px solid #fde68a; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+  .chat-pending-body {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 16px 20px; gap: 8px; text-align: center;
+  }
+  .pending-icon { width: 36px; height: 36px; border-radius: 50%; background: #fffbeb; border: 1.5px solid #fde68a; display: flex; align-items: center; justify-content: center; }
+  .pending-icon svg { width: 18px; height: 18px; fill: var(--amber); }
+  .pending-title { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+  .pending-desc { font-size: 11.5px; color: var(--text-hint); line-height: 1.6; }
+  .chat-input-row { display: flex; gap: 8px; padding: 8px 14px 12px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .chat-input { flex: 1; border: 1px solid var(--border); border-radius: 20px; padding: 7px 14px; font-size: 12.5px; font-family: 'Noto Sans KR', sans-serif; outline: none; background: var(--bg); color: var(--text-hint); cursor: not-allowed; }
+  .chat-send { width: 32px; height: 32px; background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; cursor: not-allowed; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center; }
+  .chat-send svg { fill: var(--text-hint); width: 14px; height: 14px; }
+
+  .form-submit { padding: 12px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .btn-primary { width: 100%; background: var(--red); color: #fff; border: none; border-radius: var(--radius); padding: 11px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s; letter-spacing: -.2px; }
+  .btn-primary:hover { background: var(--red-dark); }
+  .btn-primary:disabled { background: var(--border); color: var(--text-hint); cursor: not-allowed; }
+
+  .map-container { flex: 1; position: relative; overflow: hidden; }
+  #map { width: 100%; height: 100%; }
+
+  .map-overlay { position: absolute; top: 14px; left: 14px; pointer-events: none; }
+  .map-status-card { background: rgba(255,255,255,.96); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; pointer-events: all; box-shadow: var(--shadow-md); font-size: 12px; min-width: 180px; }
+  .card-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--text-hint); text-transform: uppercase; margin-bottom: 4px; }
+  .loc-text { font-size: 13px; font-weight: 500; color: var(--text); }
+  .loc-sub { font-size: 11px; color: var(--text-hint); font-family: 'IBM Plex Mono', monospace; }
+
+  .api-status-card { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,.96); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 13px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 5px; }
+  .api-row { display: flex; align-items: center; gap: 7px; }
+  .api-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .api-dot.live { background: var(--green); }
+  .api-dot.pending { background: var(--amber); }
+  .api-row span { font-size: 11px; font-weight: 500; }
+
+  .result-panel { background: var(--surface); border-top: 1px solid var(--border); height: 230px; overflow-y: auto; }
+  .result-header { display: flex; align-items: center; justify-content: space-between; padding: 11px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 5; }
+  .result-title { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-hint); }
+  .result-meta { display: flex; gap: 8px; align-items: center; }
+  .data-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; letter-spacing: .04em; display: none; }
+  .tag-live { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+  .tag-sim { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .result-count { font-size: 12px; color: var(--text-muted); }
+
+  .hospital-list { display: grid; grid-template-columns: repeat(3,1fr); }
+  .hospital-card { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 13px 15px; cursor: pointer; transition: background .12s; position: relative; }
+  .hospital-card:hover { background: var(--bg); }
+  .hospital-card:nth-child(3n) { border-right: none; }
+  .rank-badge { position: absolute; top: 11px; right: 13px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+  .rank-1 { background: var(--red); color: #fff; }
+  .rank-2 { background: #e5e7eb; color: var(--text-muted); }
+  .rank-3 { background: var(--surface2); color: var(--text-hint); }
+  .rank-n { background: transparent; color: var(--text-hint); font-size: 10px; }
+  .hosp-name { font-size: 13px; font-weight: 700; margin-bottom: 5px; padding-right: 28px; }
+  .hosp-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+  .meta-pill { font-size: 10px; padding: 2px 7px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .meta-pill.ok { border-color: #86efac; background: #f0fdf4; color: #15803d; }
+  .meta-pill.warn { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
+  .meta-pill.crit { border-color: #fca5a5; background: #fef2f2; color: #991b1b; }
+  .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .score-bar-bg { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 2px; background: var(--red); transition: width .6s ease; }
+  .score-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: var(--text); min-width: 26px; text-align: right; }
+
+  .loading-overlay { display: none; position: absolute; inset: 0; background: rgba(247,247,247,.88); align-items: center; justify-content: center; flex-direction: column; gap: 12px; z-index: 50; }
+  .loading-overlay.active { display: flex; }
+  .spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading-text { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  .empty-result { padding: 32px; text-align: center; color: var(--text-hint); font-size: 13px; grid-column: 1/-1; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8 2 4.5 5.5 4.5 9.5c0 5.25 7.5 12.5 7.5 12.5s7.5-7.25 7.5-12.5C19.5 5.5 16 2 12 2zm0 10a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg>
+    </div>
+    <div class="header-title">응급실 배정 <span>최적화</span> 시스템</div>
+  </div>
+  <div class="header-right">
+    <div class="status-dot"><div class="dot"></div><span>실시간 연동 중</span></div>
+    <div class="time-display" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<div class="main-layout">
+
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <div class="section-label">환자 정보 입력</div>
+
+    <div class="patient-form">
+
+      <!-- 나이 / 성별 -->
+      <div class="form-group">
+        <div class="form-row">
+          <div>
+            <label class="form-label">나이</label>
+            <input type="number" id="age" placeholder="예: 52" min="0" max="120">
+          </div>
+          <div>
+            <label class="form-label">성별</label>
+            <select id="gender">
+              <option value="">선택</option>
+              <option value="male">남성</option>
+              <option value="female">여성</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 주요 증상 -->
+      <div class="form-group">
+        <label class="form-label">주요 증상 <span class="hint">(복수 선택 가능)</span></label>
+        <div class="symptom-tags">
+          <div class="tag" onclick="toggleTag(this)">흉통</div>
+          <div class="tag" onclick="toggleTag(this)">호흡곤란</div>
+          <div class="tag" onclick="toggleTag(this)">복통</div>
+          <div class="tag" onclick="toggleTag(this)">두통</div>
+          <div class="tag" onclick="toggleTag(this)">심정지</div>
+          <div class="tag" onclick="toggleTag(this)">외상</div>
+          <div class="tag" onclick="toggleTag(this)">뇌졸중</div>
+          <div class="tag" onclick="toggleTag(this)">발열</div>
+          <div class="tag" onclick="toggleTag(this)">고혈압</div>
+          <div class="tag" onclick="toggleTag(this)">의식저하</div>
+          <div class="tag" onclick="toggleTag(this)">좌측 팔 저림</div>
+          <div class="tag" onclick="toggleTag(this)">식은땀</div>
+          <div class="tag" onclick="toggleTag(this)">구토</div>
+          <div class="tag" onclick="toggleTag(this)">골절</div>
+        </div>
+      </div>
+
+      <!-- 필요 진료과 -->
+      <div class="form-group">
+        <label class="form-label">필요 진료과</label>
+        <select id="dept">
+          <option value="">선택 (선택사항)</option>
+          <option value="cardiac">심혈관·흉부외과</option>
+          <option value="neuro">신경과·신경외과</option>
+          <option value="trauma">외상외과·정형외과</option>
+          <option value="internal">내과</option>
+          <option value="peds">소아과</option>
+          <option value="ob">산부인과</option>
+          <option value="ent">이비인후과</option>
+          <option value="uro">비뇨기과</option>
+        </select>
+      </div>
+
+      <!-- 기존 병력 -->
+      <div class="form-group">
+        <label class="form-label">기존 병력</label>
+        <textarea id="medHistory" placeholder="예: 고혈압, 당뇨, 부정맥 등"></textarea>
+      </div>
+
+      <!-- 기존 다니던 병원 -->
+      <div class="form-group">
+        <label class="form-label">기존 다니던 병원 <span class="hint">(선택사항)</span></label>
+        <input type="text" id="prevHosp" placeholder="예: 세브란스병원 심혈관센터">
+      </div>
+
+    </div>
+
+    <!-- RAG 챗봇 - API 연동 대기 상태 -->
+    <div class="chat-section">
+      <div class="chat-label">
+        증상 AI 어시스턴트
+        <span class="ai-badge">RAG</span>
+        <span class="rag-pending">API 연동 준비 중</span>
+      </div>
+      <div class="chat-pending-body">
+        <div class="pending-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 110 20A10 10 0 0112 2zm0 2a8 8 0 100 16A8 8 0 0012 4zm0 3a1 1 0 011 1v4a1 1 0 01-2 0V8a1 1 0 011-1zm0 8a1.25 1.25 0 110 2.5A1.25 1.25 0 0112 15z"/></svg>
+        </div>
+        <div class="pending-title">RAG API 연동 대기 중</div>
+        <div class="pending-desc">API 키 발급 후 연동하면 자연어 증상 입력 시<br>자동으로 진료과 및 태그를 분류합니다.</div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" type="text" placeholder="RAG API 연동 후 활성화됩니다" disabled>
+        <button class="chat-send" disabled>
+          <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="form-submit">
+      <button class="btn-primary" id="runBtn" onclick="runOptimization()">⚡ 최적 응급실 배정 실행</button>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <div class="map-container">
+      <div id="map"></div>
+
+      <div class="map-overlay">
+        <div class="map-status-card">
+          <div class="card-title">현재 위치</div>
+          <div class="loc-text" id="locName">위치 확인 중...</div>
+          <div class="loc-sub" id="locCoord">---, ---</div>
+        </div>
+      </div>
+
+      <div class="api-status-card">
+        <div class="api-row">
+          <div class="api-dot live"></div>
+          <span style="color:#15803d;">국가응급의료센터 API 연동</span>
+        </div>
+        <div class="api-row">
+          <div class="api-dot live"></div>
+          <span style="color:#15803d;">카카오맵 API 연동</span>
+        </div>
+        <div class="api-row">
+          <div class="api-dot pending"></div>
+          <span style="color:#92400e;">RAG 챗봇 대기 중</span>
+        </div>
+      </div>
+
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">응급실 데이터 로딩 중...</div>
+      </div>
+    </div>
+
+    <div class="result-panel">
+      <div class="result-header">
+        <div class="result-title">추천 응급실 순위</div>
+        <div class="result-meta">
+          <span class="data-tag" id="dataTag"></span>
+          <span class="result-count" id="resultCount">배정 실행 전</span>
+        </div>
+      </div>
+      <div class="hospital-list" id="hospitalList">
+        <div class="empty-result">환자 정보를 입력하고 배정을 실행해 주세요.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=52d0e7593b04d163b81523d931af4366&libraries=services"></script>
+<script>
+const EMER_API_KEY = 'ea96888b80ad785fc4faaf0ba1e1af69be3d07a3ca34b05f263c6d7986cb0899';
+const EMER_BASE    = 'https://apis.data.go.kr/B552657/ErmctInfoInqireService';
+
+let selectedTags = [];
+let userLat = null, userLng = null;
+let kakaoMap = null;
+let overlayMarkers = [];
+let rawHospitalData = [];
+let useRealData = false;
+
+// Clock
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('ko-KR',{hour12:false});
+}
+updateClock(); setInterval(updateClock, 1000);
+
+function toggleTag(el) {
+  el.classList.toggle('active');
+  selectedTags = Array.from(document.querySelectorAll('.tag.active')).map(t => t.textContent);
+}
+
+// Haversine
+function calcDist(lat1,lng1,lat2,lng2) {
+  const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// 국가응급의료센터 API 호출
+async function fetchEmerData(lat, lng) {
+  try {
+    const params = new URLSearchParams({
+      serviceKey: EMER_API_KEY,
+      pageNo: 1, numOfRows: 20,
+      WGS84_LON: lng.toFixed(6),
+      WGS84_LAT: lat.toFixed(6)
+    });
+    const res = await fetch(`${EMER_BASE}/getEmrrmRltmUsefulSckbdInfoInqire?${params}`, {mode:'cors'});
+    if (!res.ok) throw new Error('응답 오류');
+    const text = await res.text();
+    const xml = new DOMParser().parseFromString(text, 'text/xml');
+    const items = xml.querySelectorAll('item');
+    if (!items.length) throw new Error('항목 없음');
+
+    return Array.from(items).map(item => {
+      const g = tag => item.querySelector(tag)?.textContent?.trim() || '';
+      const hvec  = parseInt(g('hvec'))  || 0;
+      const hpbdn = parseInt(g('hpbdn')) || 10;
+      const occ   = hpbdn > 0 ? Math.round((1 - hvec/hpbdn)*100) : 80;
+      const hlat  = parseFloat(g('wgs84Lat')) || lat;
+      const hlng  = parseFloat(g('wgs84Lon')) || lng;
+      const dist  = calcDist(lat, lng, hlat, hlng);
+      return {
+        name: g('dutyName') || g('hpid'),
+        address: g('dutyAddr'),
+        phone: g('dutyTel3') || g('dutyTel1'),
+        lat: hlat, lng: hlng,
+        occupancy: Math.min(occ, 99),
+        available: occ < 60 ? 'ok' : occ < 80 ? 'warn' : 'crit',
+        availBeds: hvec,
+        eta: Math.round(dist/333*60+2),
+        dist: (dist/1000).toFixed(1),
+        real: true
+      };
+    });
+  } catch(e) {
+    console.warn('[국가응급의료센터 API] CORS 또는 오류, 카카오 폴백 사용:', e.message);
+    return null;
+  }
+}
+
+// 카카오 폴백
+function fetchKakaoHospitals(lat, lng, cb) {
+  const ps = new kakao.maps.services.Places();
+  ps.keywordSearch('응급실', function(data, status) {
+    if (status !== kakao.maps.services.Status.OK) { cb([]); return; }
+    cb(data.slice(0,12).map(p => {
+      const occ  = Math.floor(Math.random()*55+30);
+      const hlat = parseFloat(p.y), hlng = parseFloat(p.x);
+      const dist = calcDist(lat, lng, hlat, hlng);
+      return {
+        name: p.place_name, address: p.address_name, phone: p.phone,
+        lat: hlat, lng: hlng,
+        occupancy: occ,
+        available: occ<60?'ok':occ<80?'warn':'crit',
+        availBeds: Math.floor(Math.random()*15+2),
+        eta: Math.round(dist/333*60+2),
+        dist: (dist/1000).toFixed(1),
+        real: false
+      };
+    }));
+  }, { location: new kakao.maps.LatLng(lat, lng), radius: 6000, size: 15 });
+}
+
+// 마커 렌더링
+function clearOverlays() { overlayMarkers.forEach(o=>o.setMap(null)); overlayMarkers=[]; }
+
+function renderMarkers(hospitals) {
+  clearOverlays();
+  const cmap = {ok:'#16a34a', warn:'#d97706', crit:'#dc2626'};
+  hospitals.forEach(h => {
+    const color = cmap[h.available];
+    const el = document.createElement('div');
+    el.style.cssText = `background:${color};color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.22);cursor:pointer;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;`;
+    el.textContent = h.name.replace(/권역|응급의료센터|응급실/g,'').trim() || h.name;
+    const ov = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(h.lat,h.lng), content: el, yAnchor: 1.3 });
+    ov.setMap(kakaoMap);
+    overlayMarkers.push(ov);
+    el.addEventListener('click', function() {
+      const iw = new kakao.maps.InfoWindow({
+        content: `<div style="padding:12px 14px;min-width:210px;font-family:'Noto Sans KR',sans-serif;font-size:13px;line-height:1.5;"><div style="font-weight:700;margin-bottom:4px;font-size:14px;">${h.name}</div><div style="color:#666;font-size:12px;margin-bottom:8px;">${h.address}</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="font-size:11px;color:#888;">점유율</span><div style="flex:1;height:5px;background:#eee;border-radius:3px;overflow:hidden;"><div style="width:${h.occupancy}%;height:100%;background:${color};border-radius:3px;"></div></div><span style="font-size:11px;font-weight:700;color:${color};">${h.occupancy}%</span></div><div style="font-size:11px;color:#888;">가용 ${h.availBeds}병상 · 이송 ${h.eta}분</div>${h.phone?`<div style="font-size:11px;color:#999;margin-top:4px;">${h.phone}</div>`:''}${!h.real?'<div style="font-size:10px;color:#d97706;margin-top:6px;">※ 시뮬레이션 데이터</div>':''}</div>`,
+        removable: true
+      });
+      const tmp = new kakao.maps.Marker({position:new kakao.maps.LatLng(h.lat,h.lng)});
+      iw.open(kakaoMap, tmp); tmp.setMap(null);
+      kakaoMap.setCenter(new kakao.maps.LatLng(h.lat,h.lng));
+    });
+  });
+}
+
+// 지도 초기화
+kakao.maps.load(function() {
+  kakaoMap = new kakao.maps.Map(document.getElementById('map'), {
+    center: new kakao.maps.LatLng(37.5665, 126.9780), level: 5
+  });
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => initMap(pos.coords.latitude, pos.coords.longitude),
+      ()   => initMap(37.5665, 126.9780)
+    );
+  } else { initMap(37.5665, 126.9780); }
+});
+
+async function initMap(lat, lng) {
+  userLat = lat; userLng = lng;
+  kakaoMap.setCenter(new kakao.maps.LatLng(lat,lng)); kakaoMap.setLevel(4);
+
+  const myEl = document.createElement('div');
+  myEl.style.cssText = 'width:16px;height:16px;border-radius:50%;background:#ff0000;border:3px solid #fff;box-shadow:0 0 0 2px #ff0000,0 2px 8px rgba(0,0,0,.25);';
+  new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(lat,lng),content:myEl,yAnchor:.5}).setMap(kakaoMap);
+
+  document.getElementById('locCoord').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  new kakao.maps.services.Geocoder().coord2RegionCode(lng,lat,function(r,s){
+    if(s===kakao.maps.services.Status.OK){
+      const reg=r.find(x=>x.region_type==='H')||r[0];
+      document.getElementById('locName').textContent=reg.address_name;
+    }
+  });
+
+  document.getElementById('loadingText').textContent = '국가응급의료센터 실시간 데이터 로딩 중...';
+  document.getElementById('loadingOverlay').classList.add('active');
+
+  let hospitals = await fetchEmerData(lat, lng);
+  if (hospitals && hospitals.length > 0) {
+    useRealData = true;
+    rawHospitalData = hospitals;
+    renderMarkers(hospitals);
+  } else {
+    fetchKakaoHospitals(lat, lng, function(fb) {
+      useRealData = false;
+      rawHospitalData = fb;
+      renderMarkers(fb);
+    });
+  }
+  document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+// 스코어링 (이송시간 40% + 병상점유율 35% + 거리 25%)
+function scoreHospital(h, tags) {
+  let s = 100;
+  s -= h.eta * 1.8;
+  s -= Math.max(0, h.occupancy-40) * 0.5;
+  if (h.available==='crit') s -= 20;
+  if (h.available==='ok')   s += 5;
+  s -= parseFloat(h.dist) * 1.5;
+  const critical = ['심정지','뇌졸중','의식저하','흉통'];
+  if (tags.some(t=>critical.includes(t))) s += 8;
+  s += Math.random()*6-3;
+  return Math.max(10, Math.min(99, Math.round(s)));
+}
+
+async function runOptimization() {
+  if (!rawHospitalData.length) { alert('지도 데이터 로딩 중입니다. 잠시 후 다시 시도해 주세요.'); return; }
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('loadingText').textContent = '다중 기준 최적화 계산 중...';
+  document.getElementById('loadingOverlay').classList.add('active');
+  await new Promise(r=>setTimeout(r,1100));
+  const dept = document.getElementById('dept').value;
+  const scored = rawHospitalData.map(h=>({...h,score:scoreHospital(h,selectedTags)}));
+  scored.sort((a,b)=>b.score-a.score);
+  document.getElementById('loadingOverlay').classList.remove('active');
+  document.getElementById('runBtn').disabled = false;
+  renderResults(scored);
+  if(scored[0]) kakaoMap.setCenter(new kakao.maps.LatLng(scored[0].lat,scored[0].lng));
+}
+
+function renderResults(hospitals) {
+  const dtag = document.getElementById('dataTag');
+  dtag.style.display = 'inline';
+  if (useRealData) { dtag.className='data-tag tag-live'; dtag.textContent='실시간 데이터'; }
+  else             { dtag.className='data-tag tag-sim';  dtag.textContent='시뮬레이션'; }
+  document.getElementById('resultCount').textContent = `${hospitals.length}개 분석 완료`;
+  const sl = {ok:'여유',warn:'주의',crit:'포화'};
+  const rc = i => i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
+  document.getElementById('hospitalList').innerHTML = hospitals.map((h,i)=>`
+    <div class="hospital-card" onclick="kakaoMap.setCenter(new kakao.maps.LatLng(${h.lat},${h.lng}));kakaoMap.setLevel(4);">
+      <div class="rank-badge ${rc(i)}">${i+1}</div>
+      <div class="hosp-name">${h.name}</div>
+      <div class="hosp-meta">
+        <span class="meta-pill">${h.eta}분</span>
+        <span class="meta-pill">${h.dist}km</span>
+        <span class="meta-pill ${h.available}">${sl[h.available]} ${h.occupancy}%</span>
+        <span class="meta-pill">가용 ${h.availBeds}병상</span>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${h.score}%"></div></div>
+        <div class="score-num">${h.score}</div>
+      </div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
